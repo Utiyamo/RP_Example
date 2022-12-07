@@ -12,11 +12,13 @@ namespace RPApi.MongoDB.DAO
     public class UsersService
     {
         private IMongoCollection<Users> _usersCollection;
+        private IMongoCollection<Empresas> _empresasCollection;
 
         public UsersService()
         {
             RPExampleSettings mongodb = new RPExampleSettings();
             _usersCollection = mongodb.database().GetCollection<Users>("Users");
+            _empresasCollection = mongodb.database().GetCollection<Empresas>("Empresas");
         }
 
         public async Task<List<Users>> getUsers()
@@ -59,9 +61,22 @@ namespace RPApi.MongoDB.DAO
                 };
             else
             {
-                _usersCollection.InsertOne(user);
+                var empresaExiste = _empresasCollection.Find(e => e.CodEmpresa.Equals(user.CodEmpresa)).First();
+                if (!String.IsNullOrEmpty(empresaExiste?.CodEmpresa))
+                {
+                    _usersCollection.InsertOne(user);
 
-                return _usersCollection.Find(u => u.Id == user.Id).FirstOrDefault();
+                    return _usersCollection.Find(u => u.Id == user.Id).FirstOrDefault();
+                }
+                else
+                {
+                    return new Users()
+                    {
+                        StatusCode = 500,
+                        Message = "Empresa não cadastrado na base"
+                    };
+                }
+                
             }
         }
 

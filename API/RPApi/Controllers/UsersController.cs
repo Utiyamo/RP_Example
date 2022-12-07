@@ -23,6 +23,7 @@ namespace RPApi.Controllers
         private readonly IConfiguration _configuration;
 
         private readonly UsersService _userService = new UsersService();
+        private readonly ConfigurationService _confService = new ConfigurationService();
 
         public UsersController(ILogger<UsersController> logger, 
             IConfiguration configuration)
@@ -34,7 +35,7 @@ namespace RPApi.Controllers
         [HttpGet]
         public IEnumerable<Users> getUsers()
         {
-            return (IEnumerable<Users>)_userService.getUsers();
+            return _userService.getUsers().Result;
         }
 
         [HttpPost]
@@ -69,20 +70,22 @@ namespace RPApi.Controllers
 
         private UserToken BuildToken(Users usuario)
         {
+            var jwt = _confService.getConfiguration(usuario.CodEmpresa).Result?.jwtModel;
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.UniqueName, usuario.Email),
-                //new Claim("meuValor", "oque voce quiser"),
+                new Claim("Corporation", jwt.NameCorporation),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:key"]));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var expiration = DateTime.UtcNow.AddHours(1);
 
             JwtSecurityToken token = new JwtSecurityToken(
-                issuer: null,
+                issuer: _configuration["JWT:Issuer"].ToString(),
                 audience: null,
                 claims: claims,
                 expires: expiration,

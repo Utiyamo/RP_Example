@@ -20,5 +20,8 @@ namespace RPApi.Models
 
         [BsonElement("Password")]
         public string Password { get; set; }
+
+        [BsonElement("CodigoEmpresa")]
+        public string CodEmpresa { get; set; }
     }
 }
